@@ -219,6 +219,12 @@ def build_html(summaries, notes, df):
     return html
 
 
+def _save(html, path="output/snapshot_report.html"):
+    os.makedirs("output", exist_ok=True)
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(html)
+
+
 def main():
     print("Loading cleaned data...")
     df = load_clean()

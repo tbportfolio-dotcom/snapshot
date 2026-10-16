@@ -140,6 +140,14 @@ def print_recipe(recipe_obj):
     print()
 
 
+# ---------- save helper (used by run.py too) ----------
+
+def _save(recipe_obj, path="output/cleaning_recipe.json"):
+    os.makedirs("output", exist_ok=True)
+    with open(path, "w") as f:
+        json.dump(recipe_obj, f, indent=2)
+
+
 # ---------- entry point ----------
 
 def main():

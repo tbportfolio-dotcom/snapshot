@@ -152,6 +152,14 @@ def print_report(result):
     print()
 
 
+# ---------- save helper (used by run.py too) ----------
+
+def _save(result, path="output/audit_findings.json"):
+    os.makedirs("output", exist_ok=True)
+    with open(path, "w") as f:
+        json.dump(result, f, indent=2)
+
+
 # ---------- entry point ----------
 
 def main():

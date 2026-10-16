@@ -64,9 +64,14 @@ def main():
 
     # ---- Stage 4: Report ----
     print("\n[4/4] REPORT — building the HTML summary...")
-    summaries = report.compute_summaries(df_clean)
-    notes = report.write_analyst_notes(df_clean)
-    html = report.build_html(summaries, notes, df_clean)
+    # Reload the cleaned CSV from disk so pandas infers numeric types.
+    # The executor keeps every column as text (to avoid reformatting raw
+    # data); the report needs real floats to sum amounts, so we read the
+    # saved file back the same way the standalone report stage does.
+    df_report = report.load_clean()
+    summaries = report.compute_summaries(df_report)
+    notes = report.write_analyst_notes(df_report)
+    html = report.build_html(summaries, notes, df_report)
     report._save(html)
     print("      Report written to output/snapshot_report.html")
 

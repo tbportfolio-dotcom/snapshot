@@ -15,12 +15,37 @@ Each recipe action maps to one small function below.
 import os
 import json
 import re
+import difflib
 from datetime import datetime
 import pandas as pd
 
 
 EXPECTED_MIN = datetime(2000, 1, 1)
 EXPECTED_MAX = datetime(2025, 12, 31)
+
+# PINNED knowledge: the 50 US states (+ DC) never change, so this lookup
+# lives in deterministic code — NOT in the AI's per-run recipe. The AI
+# flags state problems; this map is what actually normalizes them, the
+# same way every run. Full name -> 2-letter USPS code.
+US_STATES = {
+    "alabama": "AL", "alaska": "AK", "arizona": "AZ", "arkansas": "AR",
+    "california": "CA", "colorado": "CO", "connecticut": "CT",
+    "delaware": "DE", "florida": "FL", "georgia": "GA", "hawaii": "HI",
+    "idaho": "ID", "illinois": "IL", "indiana": "IN", "iowa": "IA",
+    "kansas": "KS", "kentucky": "KY", "louisiana": "LA", "maine": "ME",
+    "maryland": "MD", "massachusetts": "MA", "michigan": "MI",
+    "minnesota": "MN", "mississippi": "MS", "missouri": "MO",
+    "montana": "MT", "nebraska": "NE", "nevada": "NV",
+    "new hampshire": "NH", "new jersey": "NJ", "new mexico": "NM",
+    "new york": "NY", "north carolina": "NC", "north dakota": "ND",
+    "ohio": "OH", "oklahoma": "OK", "oregon": "OR", "pennsylvania": "PA",
+    "rhode island": "RI", "south carolina": "SC", "south dakota": "SD",
+    "tennessee": "TN", "texas": "TX", "utah": "UT", "vermont": "VT",
+    "virginia": "VA", "washington": "WA", "west virginia": "WV",
+    "wisconsin": "WI", "wyoming": "WY", "district of columbia": "DC",
+}
+VALID_CODES = set(US_STATES.values())
+STATE_NAMES = list(US_STATES.keys())
 
 
 # ---------- load inputs ----------
@@ -51,14 +76,40 @@ def fix_spelling(df, col, params):
 
 
 def standardize_state(df, col, params):
-    """Trim, uppercase, and map full names/variants to USPS 2-letter codes."""
-    mapping = params.get("map", {})
-    if params.get("trim_whitespace"):
-        df[col] = df[col].str.strip()
-    df[col] = df[col].replace(mapping)
-    if params.get("uppercase_fallback"):
-        # anything already 2 letters -> uppercase it
-        df[col] = df[col].apply(lambda v: v.upper() if len(v) == 2 else v)
+    """Normalize US states to 2-letter USPS codes — deterministically, every run.
+
+    Order of attack for each value:
+      1. trim whitespace
+      2. apply the recipe's own map first (lets the AI override anything)
+      3. already a valid 2-letter code? uppercase it and done
+      4. known full state name? look it up in the pinned US_STATES map
+      5. still unresolved? difflib close-match against the 50 real state
+         names (high cutoff) — this is what catches typos like 'Alsaka'
+      6. give up and leave the original value untouched
+    """
+    recipe_map = params.get("map", {})
+
+    def normalize(value):
+        v = (value or "").strip()
+        if v == "":
+            return v
+        # 2. recipe's explicit map wins if it names this value
+        if v in recipe_map:
+            v = recipe_map[v]
+        # 3. already a valid USPS code (any casing)
+        if v.upper() in VALID_CODES:
+            return v.upper()
+        # 4. exact full-name match
+        if v.lower() in US_STATES:
+            return US_STATES[v.lower()]
+        # 5. typo? closest real state name, only if it's a strong match
+        near = difflib.get_close_matches(v.lower(), STATE_NAMES, n=1, cutoff=0.8)
+        if near:
+            return US_STATES[near[0]]
+        # 6. couldn't resolve — leave it as-is (the audit already flagged it)
+        return v
+
+    df[col] = df[col].apply(normalize)
     return df
 
 
@@ -189,6 +240,11 @@ def run_recipe(df, recipe_obj):
         df = fn(df, col, params)
 
     return df
+
+
+def _save(df, path="output/cleaned_banks.csv"):
+    os.makedirs("output", exist_ok=True)
+    df.to_csv(path, index=False)
 
 
 def main():
