@@ -1,0 +1,21 @@
+# Secrets — NEVER commit these
+.env
+*.key
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Snapshot working output (optional — keep generated files out of git)
+output/

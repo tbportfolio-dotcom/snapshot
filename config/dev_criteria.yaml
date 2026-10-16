@@ -1,0 +1,41 @@
+# dev_criteria.yaml — Snapshot developer logic
+# ------------------------------------------------------------
+# This file is the "intention" layer. The AI reads it to learn what
+# "correct" looks like, then reasons against it. Python enforces it.
+#
+# Legend (from the project spec):
+#   pinned:   hard rules the agent ALWAYS applies — never guessed
+#   proposed: the agent reasons and SUGGESTS; a human confirms
+#   optional: user-supplied overrides, blank unless provided
+# ------------------------------------------------------------
+
+dataset_name: messy_banks
+
+# --- PINNED: things we know and that never change ---
+# The AI treats these as ground truth. No reasoning, no guessing.
+pinned:
+  primary_key: Bank_ID            # we KNOW this is the row identifier
+  date_column: Transaction_Date
+  expected_date_range:
+    min: "2000-01-01"
+    max: "2025-12-31"             # anything outside this window = flag
+  amount_column: Current_Amount
+  amount_min: 0                   # negative balances are suspect here
+  boolean_columns:
+    - Is_Open                     # should resolve to only true/false
+  valid_states_are_us: true       # must be a real US state (name or 2-letter)
+
+# --- PROPOSED: gray areas the AI reasons about and we confirm ---
+# The AI looks, forms a judgment, explains WHY, and asks before acting.
+proposed:
+  detect_duplicates: true         # AI decides if a repeat is real or coincidence
+  detect_spelling_drift: true     # Miami/Maimi/Mimai — AI clusters likely-same values
+  infer_date_formats: true        # AI identifies the mixed formats present
+  suspect_columns: []             # AI may nominate columns that look unreliable
+
+# --- OPTIONAL: user overrides (blank = use defaults above) ---
+optional:
+  rename_map: {}                  # e.g. {Current_Amount: Balance}
+  mask_columns:                   # columns to mask in output (sensitive)
+    - Account_Ref
+  custom_flags: []                # conditional rules on column data only

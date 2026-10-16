@@ -1,0 +1,16 @@
+Bank_ID,Account_Ref,Bank_Name,Bank_Code,Account_Type,State,City,Transaction_Date,Current_Amount,Is_Open
+B001,ACCT-0001,First Coast Bank,FCB,Checking,FL,Miami,2024-06-12,15230.50,true
+B002,ACCT-0002,First Coast Bank,FCB,Savings,Fl,Maimi,06/13/2024,8200.00,TRUE
+B003,ACCT-0003,Summit Trust,SMT,Checking,Florida,Mimai,06142024,22100.75,True
+B004,ACCT-0004,Summit Trust,SMT,Savings,CA ,Los Angeles,2024-07-01,5400.00,false
+B005,ACCT-0005,Pacific Holdings,PAC,Checking,CA,Los Angeles,July 4th 2024,19800.25,FALSE
+B006,ACCT-0006,Pacific Holdings,PAC,Checking,California,San Diego,2024/07/15,,False
+B007,ACCT-0007,Evergreen Savings,EVG,Savings,WA,Seattle,2024-08-03,31200.00,true
+B008,ACCT-0008,Evergreen Savings,EVG,Savings,Wa,Seatle,08/04/2024,,yes
+B009,ACCT-0009,Northgate Bank,NGB,Checking,Alsaka,Anchorage,2024-08-20,7600.40,true
+B010,ACCT-0010,Northgate Bank,NGB,Checking,AK,Anchorage,1899-08-20,7600.40,true
+B011,ACCT-0011,Lone Star Credit,LSC,Savings,TX,Houston,2024-09-10,44300.00,TRUE
+B012,ACCT-0012,Lone Star Credit,LSC,Savings,Texas,Houston,2099-09-10,44300.00,TRUE
+B013,ACCT-0013,Harbor Financial,HBR,Checking,NY,New York,2024-09-22,27500.80,false
+B014,ACCT-0014,Harbor Financial,HBR,Checking,NY,New york,09/22/2024,27500.80,0
+B015,ACCT-0015,Crestview Bank,CRV,Savings,GA,Atlanta,2024-10-01,13900.00,1
