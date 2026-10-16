@@ -47,6 +47,21 @@ US_STATES = {
 VALID_CODES = set(US_STATES.values())
 STATE_NAMES = list(US_STATES.keys())
 
+# PINNED knowledge: the common date formats don't change either, so the
+# executor always tries these — it is NOT left dependent on the AI's
+# per-run recipe remembering to supply them. The recipe can add more.
+DEFAULT_DATE_FORMATS = [
+    "%Y-%m-%d",      # 2024-06-12  (ISO)
+    "%m/%d/%Y",      # 06/13/2024  (US slash)
+    "%Y/%m/%d",      # 2024/07/15
+    "%m-%d-%Y",      # 06-13-2024
+    "%m%d%Y",        # 06142024    (compact)
+    "%B %d %Y",      # July 4 2024  (after ordinal strip)
+    "%b %d %Y",      # Jul 4 2024
+    "%B %d, %Y",     # July 4, 2024
+    "%d %B %Y",      # 4 July 2024
+]
+
 
 # ---------- load inputs ----------
 
@@ -114,23 +129,32 @@ def standardize_state(df, col, params):
 
 
 def parse_date_to_iso(df, col, params):
-    """Try each known format in order; output ISO YYYY-MM-DD or null."""
-    formats = params.get("formats_in_order", [])
-    strip_ordinals = params.get("strip_ordinal_suffixes", False)
+    """Normalize dates to ISO YYYY-MM-DD, deterministically, every run.
+
+    Tries the recipe's formats first, then the pinned DEFAULT_DATE_FORMATS,
+    so parsing never depends on the AI remembering to supply a format list.
+    Ordinal suffixes ('4th') are always stripped. If a value genuinely can't
+    be parsed, the ORIGINAL is kept (never silently nulled) — losing data
+    quietly is exactly what this pipeline refuses to do.
+    """
+    recipe_formats = params.get("formats_in_order", []) or []
+    # recipe formats first (let the AI override), then the pinned defaults;
+    # dedupe while preserving order
+    formats = list(dict.fromkeys(recipe_formats + DEFAULT_DATE_FORMATS))
 
     def parse_one(value):
-        v = value.strip()
+        original = value
+        v = (value or "").strip()
         if v == "":
-            return None
-        if strip_ordinals:
-            # "July 4th 2024" -> "July 4 2024"
-            v = re.sub(r"(\d+)(st|nd|rd|th)", r"\1", v)
+            return v  # blank stays blank — nothing to parse
+        # always strip ordinals: "July 4th 2024" -> "July 4 2024"
+        v = re.sub(r"(\d+)(st|nd|rd|th)", r"\1", v)
         for fmt in formats:
             try:
                 return datetime.strptime(v, fmt).strftime("%Y-%m-%d")
             except ValueError:
                 continue
-        return None  # unparseable
+        return original  # unparseable -> keep it, don't destroy it
 
     df[col] = df[col].apply(parse_one)
     return df
